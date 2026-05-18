@@ -1,12 +1,8 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
-import { prisma } from "../lib/prisma";
-import { signToken, authenticate } from "../middleware/auth";
-import {
-  registerSchema,
-  loginSchema,
-  changePasswordSchema,
-} from "../validators/schemas";
+import { prisma } from "../lib/prisma.js";
+import { signToken, authenticate } from "../middleware/auth.js";
+import { registerSchema, loginSchema, changePasswordSchema } from "../validators/schemas.js";
 
 export const authRouter = Router();
 
@@ -45,20 +41,14 @@ authRouter.post("/login", async (req, res) => {
 
   const token = signToken({ sub: user.id, role: user.role, email: user.email });
   res.json({
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      address: user.address,
-    },
+    user: { id: user.id, name: user.name, email: user.email, role: user.role, address: user.address },
     token,
   });
 });
 
 authRouter.get("/me", authenticate, async (req, res) => {
   const user = await prisma.user.findUnique({
-    where: { id: req.user!.sub },
+    where: { id: req.user.sub },
     select: { id: true, name: true, email: true, role: true, address: true },
   });
   if (!user) return res.status(404).json({ error: "User not found" });
@@ -72,7 +62,7 @@ authRouter.post("/change-password", authenticate, async (req, res) => {
   }
   const { currentPassword, newPassword } = parsed.data;
 
-  const user = await prisma.user.findUnique({ where: { id: req.user!.sub } });
+  const user = await prisma.user.findUnique({ where: { id: req.user.sub } });
   if (!user) return res.status(404).json({ error: "User not found" });
 
   const ok = await bcrypt.compare(currentPassword, user.passwordHash);

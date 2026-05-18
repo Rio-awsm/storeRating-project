@@ -1,41 +1,26 @@
-export type Role = "ADMIN" | "USER" | "OWNER";
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  address: string;
-  role: Role;
-}
-
 const TOKEN_KEY = "auth_token";
 
-export function getToken(): string | null {
+export function getToken() {
   return localStorage.getItem(TOKEN_KEY);
 }
 
-export function setToken(token: string | null) {
+export function setToken(token) {
   if (token) localStorage.setItem(TOKEN_KEY, token);
   else localStorage.removeItem(TOKEN_KEY);
 }
 
 export class ApiError extends Error {
-  status: number;
-  details: unknown;
-  constructor(status: number, message: string, details?: unknown) {
+  constructor(status, message, details) {
     super(message);
     this.status = status;
     this.details = details;
   }
 }
 
-export async function api<T = unknown>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const headers: Record<string, string> = {
+export async function api(path, options = {}) {
+  const headers = {
     "Content-Type": "application/json",
-    ...(options.headers as Record<string, string> | undefined),
+    ...options.headers,
   };
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -45,7 +30,7 @@ export async function api<T = unknown>(
   const body = text ? JSON.parse(text) : null;
 
   if (!res.ok) {
-    const fieldErrors = (body?.error?.fieldErrors ?? {}) as Record<string, string[]>;
+    const fieldErrors = body?.error?.fieldErrors ?? {};
     const firstFieldError = Object.values(fieldErrors)[0]?.[0];
     const message =
       typeof body?.error === "string"
@@ -55,5 +40,5 @@ export async function api<T = unknown>(
           `Request failed (${res.status})`;
     throw new ApiError(res.status, message, body?.error);
   }
-  return body as T;
+  return body;
 }

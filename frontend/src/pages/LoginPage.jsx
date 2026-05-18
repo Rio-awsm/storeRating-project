@@ -1,5 +1,4 @@
 import { useState } from "react";
-import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -8,10 +7,10 @@ export function LoginPage() {
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [err, setErr] = useState<string | null>(null);
+  const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  async function onSubmit(e: FormEvent) {
+  async function onSubmit(e) {
     e.preventDefault();
     setErr(null);
     setBusy(true);
@@ -20,7 +19,7 @@ export function LoginPage() {
       if (u.role === "ADMIN") nav("/admin");
       else if (u.role === "OWNER") nav("/owner");
       else nav("/stores");
-    } catch (e: any) {
+    } catch (e) {
       setErr(e.message);
     } finally {
       setBusy(false);

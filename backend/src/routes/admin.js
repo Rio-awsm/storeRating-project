@@ -1,12 +1,8 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
-import { Prisma, Role } from "@prisma/client";
-import { prisma } from "../lib/prisma";
-import { authenticate, requireRole } from "../middleware/auth";
-import {
-  adminCreateUserSchema,
-  createStoreSchema,
-} from "../validators/schemas";
+import { prisma } from "../lib/prisma.js";
+import { authenticate, requireRole } from "../middleware/auth.js";
+import { adminCreateUserSchema, createStoreSchema } from "../validators/schemas.js";
 
 export const adminRouter = Router();
 
@@ -33,7 +29,7 @@ adminRouter.post("/users", async (req, res) => {
 
   const passwordHash = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({
-    data: { name, email, address, passwordHash, role: role as Role },
+    data: { name, email, address, passwordHash, role },
     select: { id: true, name: true, email: true, role: true, address: true },
   });
   res.status(201).json({ user });
@@ -46,15 +42,12 @@ adminRouter.post("/stores", async (req, res) => {
   }
   const { name, email, address, ownerEmail } = parsed.data;
 
-  let ownerId: string | null = null;
+  let ownerId = null;
   if (ownerEmail) {
     const owner = await prisma.user.findUnique({ where: { email: ownerEmail } });
     if (!owner) return res.status(404).json({ error: "Owner email not found" });
     if (owner.role !== "OWNER") {
-      await prisma.user.update({
-        where: { id: owner.id },
-        data: { role: "OWNER" },
-      });
+      await prisma.user.update({ where: { id: owner.id }, data: { role: "OWNER" } });
     }
     ownerId = owner.id;
   }
@@ -62,37 +55,28 @@ adminRouter.post("/stores", async (req, res) => {
   const exists = await prisma.store.findUnique({ where: { email } });
   if (exists) return res.status(409).json({ error: "Store email already in use" });
 
-  const store = await prisma.store.create({
-    data: { name, email, address, ownerId },
-  });
+  const store = await prisma.store.create({ data: { name, email, address, ownerId } });
   res.status(201).json({ store });
 });
 
 adminRouter.get("/users", async (req, res) => {
   const { name, email, address, role, sortBy = "name", order = "asc" } = req.query;
-  const where: Prisma.UserWhereInput = {};
+  const where = {};
   if (typeof name === "string") where.name = { contains: name, mode: "insensitive" };
   if (typeof email === "string") where.email = { contains: email, mode: "insensitive" };
   if (typeof address === "string") where.address = { contains: address, mode: "insensitive" };
   if (typeof role === "string" && ["ADMIN", "USER", "OWNER"].includes(role)) {
-    where.role = role as Role;
+    where.role = role;
   }
 
-  const allowedSort = ["name", "email", "address", "role", "createdAt"] as const;
-  const sortField = allowedSort.includes(sortBy as any) ? (sortBy as string) : "name";
+  const allowedSort = ["name", "email", "address", "role", "createdAt"];
+  const sortField = allowedSort.includes(sortBy) ? sortBy : "name";
   const sortOrder = order === "desc" ? "desc" : "asc";
 
   const users = await prisma.user.findMany({
     where,
     orderBy: { [sortField]: sortOrder },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      address: true,
-      role: true,
-      createdAt: true,
-    },
+    select: { id: true, name: true, email: true, address: true, role: true, createdAt: true },
   });
   res.json({ users });
 });
@@ -108,17 +92,13 @@ adminRouter.get("/users/:id", async (req, res) => {
       role: true,
       createdAt: true,
       stores: {
-        select: {
-          id: true,
-          name: true,
-          ratings: { select: { value: true } },
-        },
+        select: { id: true, name: true, ratings: { select: { value: true } } },
       },
     },
   });
   if (!user) return res.status(404).json({ error: "User not found" });
 
-  let ownerRating: number | null = null;
+  let ownerRating = null;
   if (user.role === "OWNER" && user.stores.length > 0) {
     const allValues = user.stores.flatMap((s) => s.ratings.map((r) => r.value));
     if (allValues.length > 0) {
@@ -142,13 +122,13 @@ adminRouter.get("/users/:id", async (req, res) => {
 
 adminRouter.get("/stores", async (req, res) => {
   const { name, email, address, sortBy = "name", order = "asc" } = req.query;
-  const where: Prisma.StoreWhereInput = {};
+  const where = {};
   if (typeof name === "string") where.name = { contains: name, mode: "insensitive" };
   if (typeof email === "string") where.email = { contains: email, mode: "insensitive" };
   if (typeof address === "string") where.address = { contains: address, mode: "insensitive" };
 
-  const allowedSort = ["name", "email", "address", "createdAt"] as const;
-  const sortField = allowedSort.includes(sortBy as any) ? (sortBy as string) : "name";
+  const allowedSort = ["name", "email", "address", "createdAt"];
+  const sortField = allowedSort.includes(sortBy) ? sortBy : "name";
   const sortOrder = order === "desc" ? "desc" : "asc";
 
   const stores = await prisma.store.findMany({
@@ -165,15 +145,7 @@ adminRouter.get("/stores", async (req, res) => {
       s.ratings.length === 0
         ? null
         : s.ratings.reduce((a, b) => a + b.value, 0) / s.ratings.length;
-    return {
-      id: s.id,
-      name: s.name,
-      email: s.email,
-      address: s.address,
-      owner: s.owner,
-      rating: avg,
-      ratingCount: s.ratings.length,
-    };
+    return { id: s.id, name: s.name, email: s.email, address: s.address, owner: s.owner, rating: avg, ratingCount: s.ratings.length };
   });
   res.json({ stores: result });
 });

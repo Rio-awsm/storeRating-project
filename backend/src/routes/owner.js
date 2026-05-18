@@ -1,20 +1,18 @@
 import { Router } from "express";
-import { prisma } from "../lib/prisma";
-import { authenticate, requireRole } from "../middleware/auth";
+import { prisma } from "../lib/prisma.js";
+import { authenticate, requireRole } from "../middleware/auth.js";
 
 export const ownerRouter = Router();
 
 ownerRouter.use(authenticate, requireRole("OWNER"));
 
 ownerRouter.get("/dashboard", async (req, res) => {
-  const ownerId = req.user!.sub;
+  const ownerId = req.user.sub;
   const stores = await prisma.store.findMany({
     where: { ownerId },
     include: {
       ratings: {
-        include: {
-          user: { select: { id: true, name: true, email: true } },
-        },
+        include: { user: { select: { id: true, name: true, email: true } } },
         orderBy: { updatedAt: "desc" },
       },
     },
@@ -22,8 +20,7 @@ ownerRouter.get("/dashboard", async (req, res) => {
 
   const result = stores.map((s) => {
     const values = s.ratings.map((r) => r.value);
-    const avg =
-      values.length === 0 ? null : values.reduce((a, b) => a + b, 0) / values.length;
+    const avg = values.length === 0 ? null : values.reduce((a, b) => a + b, 0) / values.length;
     return {
       id: s.id,
       name: s.name,

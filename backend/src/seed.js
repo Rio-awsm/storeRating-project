@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { prisma } from "./lib/prisma";
+import { prisma } from "./lib/prisma.js";
 
 async function main() {
   const email = "admin@platform.local";

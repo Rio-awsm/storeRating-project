@@ -1,22 +1,11 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import type { ReactNode } from "react";
 import { api, getToken, setToken } from "../lib/api";
-import type { User } from "../lib/api";
 
-interface AuthCtx {
-  user: User | null;
-  loading: boolean;
-  login: (email: string, password: string) => Promise<User>;
-  register: (data: { name: string; email: string; address: string; password: string }) => Promise<User>;
-  logout: () => void;
-  refresh: () => Promise<void>;
-}
+const Ctx = createContext(null);
 
-const Ctx = createContext<AuthCtx | null>(null);
-
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   async function refresh() {
     const token = getToken();
@@ -26,7 +15,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     try {
-      const { user } = await api<{ user: User }>("/auth/me");
+      const { user } = await api("/auth/me");
       setUser(user);
     } catch {
       setToken(null);
@@ -40,8 +29,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refresh();
   }, []);
 
-  async function login(email: string, password: string) {
-    const { user, token } = await api<{ user: User; token: string }>("/auth/login", {
+  async function login(email, password) {
+    const { user, token } = await api("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
@@ -50,8 +39,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return user;
   }
 
-  async function register(data: { name: string; email: string; address: string; password: string }) {
-    const { user, token } = await api<{ user: User; token: string }>("/auth/register", {
+  async function register(data) {
+    const { user, token } = await api("/auth/register", {
       method: "POST",
       body: JSON.stringify(data),
     });

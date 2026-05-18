@@ -1,34 +1,18 @@
-import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import { Role } from "@prisma/client";
-import { env } from "../lib/env";
+import { env } from "../lib/env.js";
 
-export interface AuthPayload {
-  sub: string;
-  role: Role;
-  email: string;
-}
-
-declare global {
-  namespace Express {
-    interface Request {
-      user?: AuthPayload;
-    }
-  }
-}
-
-export function signToken(payload: AuthPayload): string {
+export function signToken(payload) {
   return jwt.sign(payload, env.jwtSecret, { expiresIn: "7d" });
 }
 
-export function authenticate(req: Request, res: Response, next: NextFunction) {
+export function authenticate(req, res, next) {
   const header = req.headers.authorization;
   if (!header?.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Missing or invalid Authorization header" });
   }
   const token = header.slice(7);
   try {
-    const payload = jwt.verify(token, env.jwtSecret) as AuthPayload;
+    const payload = jwt.verify(token, env.jwtSecret);
     req.user = payload;
     next();
   } catch {
@@ -36,8 +20,8 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-export function requireRole(...roles: Role[]) {
-  return (req: Request, res: Response, next: NextFunction) => {
+export function requireRole(...roles) {
+  return (req, res, next) => {
     if (!req.user) return res.status(401).json({ error: "Unauthenticated" });
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({ error: "Forbidden" });

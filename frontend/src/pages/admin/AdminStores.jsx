@@ -2,24 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../lib/api";
 
-interface StoreRow {
-  id: string;
-  name: string;
-  email: string;
-  address: string;
-  rating: number | null;
-  ratingCount: number;
-  owner: { id: string; name: string; email: string } | null;
-}
-
-type SortKey = "name" | "email" | "address";
-
 export function AdminStores() {
-  const [stores, setStores] = useState<StoreRow[]>([]);
-  const [err, setErr] = useState<string | null>(null);
+  const [stores, setStores] = useState([]);
+  const [err, setErr] = useState(null);
   const [filters, setFilters] = useState({ name: "", email: "", address: "" });
-  const [sortBy, setSortBy] = useState<SortKey>("name");
-  const [order, setOrder] = useState<"asc" | "desc">("asc");
+  const [sortBy, setSortBy] = useState("name");
+  const [order, setOrder] = useState("asc");
 
   const query = useMemo(() => {
     const p = new URLSearchParams();
@@ -32,29 +20,19 @@ export function AdminStores() {
   }, [filters, sortBy, order]);
 
   useEffect(() => {
-    api<{ stores: StoreRow[] }>(`/admin/stores?${query}`)
-      .then((d) => setStores(d.stores))
-      .catch((e) => setErr(e.message));
+    api(`/admin/stores?${query}`).then((d) => setStores(d.stores)).catch((e) => setErr(e.message));
   }, [query]);
 
-  function toggleSort(key: SortKey) {
+  function toggleSort(key) {
     if (sortBy === key) setOrder(order === "asc" ? "desc" : "asc");
-    else {
-      setSortBy(key);
-      setOrder("asc");
-    }
+    else { setSortBy(key); setOrder("asc"); }
   }
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold text-slate-900">Stores</h1>
-        <Link
-          to="/admin/stores/new"
-          className="bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium px-4 py-2 rounded-lg"
-        >
-          + New Store
-        </Link>
+        <Link to="/admin/stores/new" className="bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium px-4 py-2 rounded-lg">+ New Store</Link>
       </div>
       <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
         <FilterInput label="Name" value={filters.name} onChange={(v) => setFilters({ ...filters, name: v })} />
@@ -79,15 +57,10 @@ export function AdminStores() {
                 <td className="px-4 py-2 text-slate-900">{s.name}</td>
                 <td className="px-4 py-2 text-slate-700">{s.email}</td>
                 <td className="px-4 py-2 text-slate-700">{s.address}</td>
-                <td className="px-4 py-2 text-slate-700">
-                  {s.owner ? s.owner.email : <span className="text-slate-400">—</span>}
-                </td>
+                <td className="px-4 py-2 text-slate-700">{s.owner ? s.owner.email : <span className="text-slate-400">—</span>}</td>
                 <td className="px-4 py-2 text-slate-700">
                   {s.rating !== null ? (
-                    <span>
-                      <span className="font-semibold text-amber-600">{s.rating.toFixed(2)}</span>
-                      <span className="text-xs text-slate-400"> ({s.ratingCount})</span>
-                    </span>
+                    <span><span className="font-semibold text-amber-600">{s.rating.toFixed(2)}</span><span className="text-xs text-slate-400"> ({s.ratingCount})</span></span>
                   ) : (
                     <span className="text-slate-400">No ratings yet</span>
                   )}
@@ -95,9 +68,7 @@ export function AdminStores() {
               </tr>
             ))}
             {stores.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-slate-400">No stores match these filters.</td>
-              </tr>
+              <tr><td colSpan={5} className="px-4 py-6 text-center text-slate-400">No stores match these filters.</td></tr>
             )}
           </tbody>
         </table>
@@ -106,25 +77,19 @@ export function AdminStores() {
   );
 }
 
-function Th({ children, onClick, active, order }: { children: React.ReactNode; onClick: () => void; active: boolean; order: "asc" | "desc" }) {
+function Th({ children, onClick, active, order }) {
   return (
     <th onClick={onClick} className="text-left px-4 py-2 font-medium cursor-pointer select-none hover:text-slate-900">
-      {children}
-      {active && <span className="ml-1 text-xs">{order === "asc" ? "▲" : "▼"}</span>}
+      {children}{active && <span className="ml-1 text-xs">{order === "asc" ? "▲" : "▼"}</span>}
     </th>
   );
 }
 
-function FilterInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function FilterInput({ label, value, onChange }) {
   return (
     <div>
       <label className="block text-xs text-slate-500 mb-1">{label}</label>
-      <input
-        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="Contains…"
-      />
+      <input className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" value={value} onChange={(e) => onChange(e.target.value)} placeholder="Contains…" />
     </div>
   );
 }

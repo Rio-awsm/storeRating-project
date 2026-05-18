@@ -1,31 +1,12 @@
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 
-interface Rater {
-  userId: string;
-  name: string;
-  email: string;
-  value: number;
-  ratedAt: string;
-}
-
-interface OwnerStore {
-  id: string;
-  name: string;
-  address: string;
-  averageRating: number | null;
-  ratingCount: number;
-  raters: Rater[];
-}
-
 export function OwnerDashboard() {
-  const [stores, setStores] = useState<OwnerStore[]>([]);
-  const [err, setErr] = useState<string | null>(null);
+  const [stores, setStores] = useState([]);
+  const [err, setErr] = useState(null);
 
   useEffect(() => {
-    api<{ stores: OwnerStore[] }>("/owner/dashboard")
-      .then((d) => setStores(d.stores))
-      .catch((e) => setErr(e.message));
+    api("/owner/dashboard").then((d) => setStores(d.stores)).catch((e) => setErr(e.message));
   }, []);
 
   if (err) return <div className="text-rose-600">{err}</div>;
@@ -48,9 +29,7 @@ export function OwnerDashboard() {
               </div>
               <div className="text-right">
                 <div className="text-xs text-slate-500">Average rating</div>
-                <div className="text-2xl font-semibold text-amber-600">
-                  {s.averageRating !== null ? `${s.averageRating.toFixed(2)} ★` : "—"}
-                </div>
+                <div className="text-2xl font-semibold text-amber-600">{s.averageRating !== null ? `${s.averageRating.toFixed(2)} ★` : "—"}</div>
                 <div className="text-xs text-slate-400">{s.ratingCount} ratings</div>
               </div>
             </div>

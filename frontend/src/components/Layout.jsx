@@ -35,10 +35,7 @@ export function Layout() {
               <>
                 <Link to="/change-password" className="text-slate-700 hover:text-indigo-600">Change Password</Link>
                 <span className="text-slate-500">{user.email}</span>
-                <button
-                  onClick={handleLogout}
-                  className="text-rose-600 hover:text-rose-700"
-                >
+                <button onClick={handleLogout} className="text-rose-600 hover:text-rose-700">
                   Logout
                 </button>
               </>
